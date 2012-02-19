@@ -1,0 +1,20 @@
+[
+
+        {
+                "id":                   "username",
+                "label":                "AniDB username",
+                "type":         "text",
+                "default":      "",
+        },
+
+        {
+                "id":                   "password",
+                "label":                "AniDB password",
+                "type":         "text",
+                "option":       "hidden",
+                "default":      "",
+                "secure":   "true",
+        },
+
+]
+

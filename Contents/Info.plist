@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+        <key>CFBundleDevelopmentRegion</key>
+        <string>English</string>
+        <key>CFBundleExecutable</key>
+        <string>Test Plug-in</string>
+        <key>CFBundleIdentifier</key>
+        <string>com.plexapp.agents.anidb</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+        <key>CFBundleShortVersionString</key>
+        <string>1.0</string>
+        <key>CFBundleSignature</key>
+        <string>????</string>
+        <key>CFBundleVersion</key>
+        <string>1.0</string>
+        <key>PlexAgentAttributionText</key>
+        <string>
+                    AniDB stands for Anime DataBase. AniDB is a non-profit anime database that is open freely to the public. This means that all users have the ability to add or edit information. Although there are many features available to registered users, AniDB's mission has three main objectives:
+
+    AniDB contains information about Japanese animation. Since AniDB is open for everyone, everyone is able to add or edit content. This allows users the freedom to shape AniDB's anime information to become the best it can be.
+    With AniDB you can create and maintain your own personal anime list called a Mylist. Never again will you have problems with notepad, Excel, Access or whatever programs you previously used in order to maintain a list of what anime you have or haven't seen. There are many tools for AniDB available that automatically generate the list for you.
+    AniDB contains information about all anime related files floating on the Internet. Users are able to freely add new file information or modify the information of existing files. There are no files available to download or stream from AniDB nor will its staff permit any form of downloading requests, offerings or discussions at AniDB.
+
+        </string>
+        <key>PlexFrameworkVersion</key>
+        <string>2</string>
+        <key>PlexPluginClass</key>
+        <string>Agent</string>
+        <key>PlexPluginConsoleLogging</key>
+        <string>1</string>
+        <key>PlexPluginMode</key>
+        <string>AlwaysOn</string>
+        <key>PlexPluginCodePolicy</key> 
+        <string>Elevated</string>
+        <key>PlexAgentAttributionText</key>
+  <string>
+AniDB stands for Anime DataBase. AniDB is a non-profit anime database that is open freely to the public. This means that all users have the ability to add or edit information. Although there are many features available to registered users, AniDB's mission has three main objectives:
+
+    AniDB contains information about Japanese animation. Since AniDB is open for everyone, everyone is able to add or edit content. This allows users the freedom to shape AniDB's anime information to become the best it can be.
+    With AniDB you can create and maintain your own personal anime list called a Mylist. Never again will you have problems with notepad, Excel, Access or whatever programs you previously used in order to maintain a list of what anime you have or haven't seen. There are many tools for AniDB available that automatically generate the list for you.
+    AniDB contains information about all anime related files floating on the Internet. Users are able to freely add new file information or modify the information of existing files. There are no files available to download or stream from AniDB nor will its staff permit any form of downloading requests, offerings or discussions at AniDB.
+
+  </string>
+</dict>
+</plist>
