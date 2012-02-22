@@ -153,7 +153,7 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
   name = 'AniDB'
   primary_provider = True
   languages = [Locale.Language.English]
-  accepts_from = ['com.plexapp.agents.localmedia']
+  accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.opensubtitles']
 
   def search(self, results, media, lang):
     self.doSearch(results, media, lang)
@@ -170,7 +170,8 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
   name = 'AniDB'
   primary_provider = True
   languages = [Locale.Language.English]
-  accepts_from = ['com.plexapp.agents.localmedia']
+  accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.opensubtitles' 
+                  'com.plexapp.agents.thetvdb']
 
   def search(self, results, media, lang):
     self.doSearch(results, media, lang)
