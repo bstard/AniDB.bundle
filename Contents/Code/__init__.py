@@ -1,8 +1,8 @@
-# coding=UTF-8
 import adba
 import sys
 import os
 import getopt
+import urllib
 from datetime import datetime
 
 ANIDB_PIC_URL_BASE = "http://img7.anidb.net/pics/anime/"
@@ -119,25 +119,37 @@ class MotherAgent:
     
     connection = self.connect()
 
-    filePath = String.Unquote(media.filename)
-    fileInfo = adba.File(connection, filePath = filePath,
+    filePath = urllib.unquote(media.filename)
+
+    fileInfo = adba.File(connection, filePath=filePath,
          paramsF=["aid"],
-         paramsA=["epno", "english_name", "romaji_name", "year"])
+         paramsA=["english_name", "romaji_name", "kanji_name", "year"])
     
     try:
-        Log("Trying to lookup %s on anidb" % filePath)
-        fileInfo.load_data()
+      Log("Trying to lookup %s by file on anidb" % filePath)
+      fileInfo.load_data()
     except Exception, e :
-        Log("Could not load file data, msg: " + str(e))
+      Log("Could not load file data, msg: " + str(e))
     
+    if not fileInfo.dataDict.has_key('aid') and media.name != None:
+      fileInfo = adba.Anime(connection, name=media.name,
+                         paramsA=["english_name", "kanji_name", "romaji_name", 
+                                  "year", "aid"])
+      try:
+        Log("Trying to lookup %s by name on anidb" % media.name)
+        fileInfo.load_data()
+      except Exception, e :
+        Log("Could not load anime data, msg: " + str(e))
+      
     self.disconnect(connection)
 
     if not fileInfo.dataDict.has_key('aid'):
+      Log("No match found or error occurred!")
       return
-      
+    
     aid = fileInfo.dataDict['aid']
         
-    name = self.getValueWithFallbacks(fileInfo.dataDict, 'english_name', 'romaji_name')
+    name = self.getValueWithFallbacks(fileInfo.dataDict, 'english_name', 'romaji_name', 'kanji_name')
     
     year = fileInfo.dataDict['year']
     if year.find('-') > -1:
@@ -170,8 +182,7 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
   name = 'AniDB'
   primary_provider = True
   languages = [Locale.Language.English]
-  accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.opensubtitles' 
-                  'com.plexapp.agents.thetvdb']
+  accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.opensubtitles']
 
   def search(self, results, media, lang):
     self.doSearch(results, media, lang)

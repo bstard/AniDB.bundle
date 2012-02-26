@@ -1,6 +1,3 @@
-# coding=UTF-8
-#!/usr/bin/env python
-#
 # This file is part of aDBa.
 #
 # aDBa is free software: you can redistribute it and/or modify
@@ -44,12 +41,11 @@ def get_file_hash(filePath):
         return m
 
     if os.name == "nt":
-      path = 'file:///%s' % filePath.replace('\\', '/')
-      f = urllib.urlopen(path)
+      path = r'file:///%s' % filePath.replace('\\', '/')
     else:
-      path = 'file://%s' % filePath
-      f = urllib.urlopen(path)
+      path = r'file://%s' % filePath
       
+    f = urllib.urlopen(path)
     hashes = gen_hashes(f)
     if len(hashes) == 1:
         return hashes[0].encode("hex")

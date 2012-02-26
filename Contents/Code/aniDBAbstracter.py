@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # This file is part of aDBa.
 #
 # aDBa is free software: you can redistribute it and/or modify
@@ -133,9 +131,6 @@ class Anime(aniDBabstractObject):
 
         if not (self.name or self.aid):
             raise AniDBIncorrectParameterError("No aid or name available")
-
-        if not self.aid:
-            self.aid = self.get_aid_from_xml(self.name)
 
         if not (self.name or self.aid):
             raise ValueError
