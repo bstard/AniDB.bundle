@@ -19,6 +19,11 @@ class MotherAgent:
     try:
         username = Prefs["username"]
         password = Prefs["password"]
+        
+        if not username or not password:
+            Log("Set username and password!")
+            return None
+        
         connection.auth(username, password)
     except Exception, e :
         Log("Auth exception msg: " + str(e))
@@ -87,7 +92,7 @@ class MotherAgent:
     
     try:
       if anime.dataDict.has_key('year'):
-        year = anime.dataDict['year']
+        year = str(anime.dataDict['year'])
         if year.find('-') > -1:
           year = year[:year.find('-')]
         try:
@@ -118,6 +123,9 @@ class MotherAgent:
   def doSearch(self, results, media, lang):
     
     connection = self.connect()
+
+    if not connection:
+      return
 
     filePath = urllib.unquote(media.filename)
 
@@ -151,13 +159,13 @@ class MotherAgent:
         
     name = self.getValueWithFallbacks(fileInfo.dataDict, 'english_name', 'romaji_name', 'kanji_name')
     
-    year = fileInfo.dataDict['year']
+    year = str(fileInfo.dataDict['year'])
     if year.find('-') > -1:
       year = year[:year.find('-')]
     
     Log("Appending metadata search result for anime " + name)
     
-    results.Append(MetadataSearchResult(id=str(aid), name=name, year=year, score=100, lang=Locale.Language.English))
+    results.Append(MetadataSearchResult(id=str(aid), name=name, year=int(year), score=100, lang=Locale.Language.English))
 
     
 class AniDBAgentMovies(Agent.Movies, MotherAgent):
@@ -173,6 +181,8 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
   def update(self, metadata, media, lang):
 
     connection = self.connect()
+    if not connection:
+      return
     self.getAnimeInfo(connection, metadata.id, metadata)
     self.disconnect(connection)    
   
@@ -190,6 +200,8 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
   def update(self, metadata, media, lang):
 
     connection = self.connect()
+    if not connection:
+      return
 
     self.getAnimeInfo(connection, metadata.id, metadata)
 
