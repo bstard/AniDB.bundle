@@ -7,14 +7,14 @@ from datetime import datetime
 
 ANIDB_PIC_URL_BASE = "http://img7.anidb.net/pics/anime/"
 
-
 def Start():
   HTTP.CacheTime = 0
 
 class MotherAgent:
-  
+
   def connect(self):
-    connection = adba.Connection(log=True)
+    
+    connection = adba.Connection(log=True, keepAlive)
 
     try:
         username = Prefs["username"]
@@ -77,7 +77,7 @@ class MotherAgent:
   def getDate(self, timestampString):
     return datetime.fromtimestamp(int(timestampString))
   
-  def getAnimeInfo(self, connection, aid, metadata):
+  def getAnimeInfo(self, connection, aid, metadata, movie=False):
     
     Log("Loading metadata for anime aid " + aid)
     
@@ -91,7 +91,7 @@ class MotherAgent:
       Log("Could not load anime info, msg: " + str(e))
     
     try:
-      if anime.dataDict.has_key('year'):
+      if movie and anime.dataDict.has_key('year'):
         year = str(anime.dataDict['year'])
         if year.find('-') > -1:
           year = year[:year.find('-')]
@@ -104,7 +104,8 @@ class MotherAgent:
         metadata.rating = float(anime.dataDict['rating']) / 100
       
       metadata.title = self.getValueWithFallbacks(anime.dataDict, 'english_name', 'romaji_name', 'kanji_name')
-      metadata.original_title = self.getValueWithFallbacks(anime.dataDict, 'romaji_name', 'kanji_name')
+      if movie:
+          metadata.original_title = self.getValueWithFallbacks(anime.dataDict, 'romaji_name', 'kanji_name')
       metadata.originally_available_at = self.getDate(anime.dataDict['air_date'])
         
       if anime.dataDict.has_key('picname'):
@@ -183,7 +184,7 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
     connection = self.connect()
     if not connection:
       return
-    self.getAnimeInfo(connection, metadata.id, metadata)
+    self.getAnimeInfo(connection, metadata.id, metadata, movie=True)
     self.disconnect(connection)    
   
   
@@ -223,7 +224,6 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
           
         metadata.seasons[s].episodes[e].title = self.getValueWithFallbacks(episode.dataDict, 
                                                                            'name', 'romaji', 'kanji')
-        
         if episode.dataDict.has_key('rating'):
           metadata.seasons[s].episodes[e].rating = float(episode.dataDict['rating']) / 100
       
