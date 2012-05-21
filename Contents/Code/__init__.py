@@ -14,7 +14,7 @@ class MotherAgent:
 
   def connect(self):
     
-    connection = adba.Connection(log=True, keepAlive)
+    connection = adba.Connection(log=True)
 
     try:
         username = Prefs["username"]
