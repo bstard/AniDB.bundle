@@ -3,18 +3,36 @@ import sys
 import os
 import getopt
 import urllib
-from datetime import datetime
+from datetime import datetime, timedelta
 
 ANIDB_PIC_URL_BASE = "http://img7.anidb.net/pics/anime/"
+
+IDLE_TIMEOUT = timedelta(seconds = 60 * 5)
 
 def Start():
   HTTP.CacheTime = 0
 
 class MotherAgent:
 
+  lastAccess = None
+  connection = None
+
   def connect(self):
     
-    connection = adba.Connection(log=True)
+    now = datetime.now()
+    
+    if self.connection and self.lastAccess and (now-IDLE_TIMEOUT) <= self.lastAccess:
+        Log("Reusing authenticated connection")
+        self.lastAccess = datetime.now()
+        return self.connection 
+    
+    try:
+        self.connection.stop()
+        self.connection = None
+    except:
+        pass
+    
+    self.connection = adba.Connection(log=True)
 
     try:
         username = Prefs["username"]
@@ -24,15 +42,17 @@ class MotherAgent:
             Log("Set username and password!")
             return None
         
-        connection.auth(username, password)
+        self.connection.auth(username, password)
+        Log("Auth ok!")
+        
     except Exception, e :
         Log("Auth exception msg: " + str(e))
+        raise e
 
-    return connection
+    self.lastAccess = datetime.now()
     
-  def disconnect(self, connection):
-    connection.stop()
-
+    return self.connection
+    
   def decodeString(self, string = None):
     if string == None:
       return string
@@ -89,6 +109,7 @@ class MotherAgent:
       anime.load_data()
     except Exception, e :
       Log("Could not load anime info, msg: " + str(e))
+      raise e
     
     try:
       if movie and anime.dataDict.has_key('year'):
@@ -114,11 +135,13 @@ class MotherAgent:
 
     except Exception, e:
       Log("Could not set anime metadata, msg: " + str(e))
+      raise e
 
     try:
       metadata.summary = self.getDescription(connection, metadata.id, 0)
     except:
       Log("Could not load description, msg: " + str(e))
+      raise e
     
 
   def doSearch(self, results, media, lang):
@@ -149,9 +172,8 @@ class MotherAgent:
         fileInfo.load_data()
       except Exception, e :
         Log("Could not load anime data, msg: " + str(e))
+        raise e
       
-    self.disconnect(connection)
-
     if not fileInfo.dataDict.has_key('aid'):
       Log("No match found or error occurred!")
       return
@@ -185,7 +207,6 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
     if not connection:
       return
     self.getAnimeInfo(connection, metadata.id, metadata, movie=True)
-    self.disconnect(connection)    
   
   
 class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
@@ -221,6 +242,7 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
           episode.load_data()
         except Exception, e :
           Log("Could not load episode info, msg: " + str(e))
+          raise e
           
         metadata.seasons[s].episodes[e].title = self.getValueWithFallbacks(episode.dataDict, 
                                                                            'name', 'romaji', 'kanji')
@@ -235,5 +257,3 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
             metadata.seasons[s].episodes[e].originally_available_at = self.getDate(episode.dataDict['aired'])
           except:
             pass
-
-    self.disconnect(connection)    
