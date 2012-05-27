@@ -21,16 +21,17 @@ class MotherAgent:
     
     now = datetime.now()
     
-    if self.connection and self.lastAccess and (now-IDLE_TIMEOUT) <= self.lastAccess:
+    if self.connection:
+      if self.lastAccess and (now-IDLE_TIMEOUT) <= self.lastAccess:
         Log("Reusing authenticated connection")
         self.lastAccess = datetime.now()
         return self.connection 
     
-    try:
-        self.connection.stop()
-        self.connection = None
-    except:
-        pass
+      try:
+          self.connection.stop()
+          self.connection = None
+      except:
+          pass
     
     self.connection = adba.Connection(log=True)
 
