@@ -140,7 +140,7 @@ class MotherAgent:
 
     try:
       metadata.summary = self.getDescription(connection, metadata.id, 0)
-    except:
+    except Exception, e:
       Log("Could not load description, msg: " + str(e))
       raise e
     
