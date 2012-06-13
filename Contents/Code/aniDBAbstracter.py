@@ -115,9 +115,11 @@ class AnimeDesc(aniDBabstractObject):
     def load_data(self):
         """load the data from anidb"""
         self.rawData = self.aniDB.animedesc(aid=self.aid, part=self.part)
-        self.fill(self.rawData.datalines[0])
-        self.build_names()
-        self.loaded = True
+        
+        if self.rawData:
+          self.fill(self.rawData.datalines[0])
+          self.build_names()
+          self.loaded = True
 
 
 class Anime(aniDBabstractObject):

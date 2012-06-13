@@ -3,11 +3,14 @@ import sys
 import os
 import getopt
 import urllib
+import threading
 from datetime import datetime, timedelta
 
 ANIDB_PIC_URL_BASE = "http://img7.anidb.net/pics/anime/"
 
 IDLE_TIMEOUT = timedelta(seconds = 60 * 5)
+
+LOCK = threading.RLock()
 
 def Start():
   HTTP.CacheTime = 0
@@ -77,6 +80,10 @@ class MotherAgent:
     animeDesc = adba.AnimeDesc(connection, aid=aid, part=part)
 
     animeDesc.load_data()
+
+    if not animeDesc.dataDict.has_key('description'):
+      Log("No description found for anime aid " + aid)
+      return None
 
     desc = self.decodeString(animeDesc.dataDict['description'])
     
@@ -200,10 +207,20 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
   accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.opensubtitles']
 
   def search(self, results, media, lang):
-    self.doSearch(results, media, lang)
+    try:
+      LOCK.acquire()
+      self.doSearch(results, media, lang)
+    finally:
+      LOCK.release()
     
   def update(self, metadata, media, lang):
-
+    try:
+      LOCK.acquire()
+      self.doUpdate(metadata, media, lang)
+    finally:
+      LOCK.release()   
+  
+  def doUpdate(self, metadata, media, lang):
     connection = self.connect()
     if not connection:
       return
@@ -218,9 +235,20 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
   accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.opensubtitles']
 
   def search(self, results, media, lang):
-    self.doSearch(results, media, lang)
+    try:
+      LOCK.acquire()
+      self.doSearch(results, media, lang)
+    finally:
+      LOCK.release()
 
   def update(self, metadata, media, lang):
+    try:
+      LOCK.acquire()
+      self.doUpdate(metadata, media, lang)
+    finally:
+      LOCK.release()
+
+  def doUpdate(self, metadata, media, lang):
 
     connection = self.connect()
     if not connection:
@@ -233,28 +261,30 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
       for picUrl in metadata.posters.keys():
         metadata.seasons[s].posters[picUrl] = Proxy.Media(HTTP.Request(picUrl).content)
       
-      for e in media.seasons[s].episodes:
+      for ep in media.seasons[s].episodes:
         
-        Log("Loading metadata for '" + metadata.title + "', episode " + e)
+        Log("Loading metadata for '" + metadata.title + "', episode " + ep)
         
-        episode = adba.Episode(connection, aid=metadata.id, epno=e)
+        episode = adba.Episode(connection, aid=metadata.id, epno=ep)
   
         try:   
           episode.load_data()
+        except IndexError, e:
+          Log("Episode number is incorrect, msg: " + str(e) + " for episode " + ep)
         except Exception, e :
           Log("Could not load episode info, msg: " + str(e))
           raise e
           
-        metadata.seasons[s].episodes[e].title = self.getValueWithFallbacks(episode.dataDict, 
+        metadata.seasons[s].episodes[ep].title = self.getValueWithFallbacks(episode.dataDict, 
                                                                            'name', 'romaji', 'kanji')
         if episode.dataDict.has_key('rating'):
-          metadata.seasons[s].episodes[e].rating = float(episode.dataDict['rating']) / 100
+          metadata.seasons[s].episodes[ep].rating = float(episode.dataDict['rating']) / 100
       
         if episode.dataDict.has_key('length'):
-          metadata.seasons[s].episodes[e].duration = int(episode.dataDict['length']) * 60 * 1000
+          metadata.seasons[s].episodes[ep].duration = int(episode.dataDict['length']) * 60 * 1000
           
         if episode.dataDict.has_key('aired'):
           try:
-            metadata.seasons[s].episodes[e].originally_available_at = self.getDate(episode.dataDict['aired'])
+            metadata.seasons[s].episodes[ep].originally_available_at = self.getDate(episode.dataDict['aired'])
           except:
             pass

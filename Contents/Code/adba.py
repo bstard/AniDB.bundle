@@ -118,7 +118,11 @@ class Connection(threading.Thread):
                 command.resp
             except:
                 self.lock.release()
-                raise AniDBCommandTimeoutError, "Command has timed out"
+                #Allow empty response for description - if this is a real timeout so be it.
+                if command.command == 'ANIMEDESC':
+                  return None
+                else:
+                  raise AniDBCommandTimeoutError, "Command has timed out"
 
             self.handle_response(command.resp)
             self.lock.release()
