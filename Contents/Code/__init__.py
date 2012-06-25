@@ -171,12 +171,15 @@ class MotherAgent:
     except Exception, e :
       Log("Could not load file data, msg: " + str(e))
     
-    if not fileInfo.dataDict.has_key('aid') and media.name != None:
-      fileInfo = adba.Anime(connection, name=media.name,
+    if not fileInfo.dataDict.has_key('aid') and (media.name is not None or media.show is not None):
+      metaName = media.name
+      if metaName is None:
+        metaName = media.show
+      fileInfo = adba.Anime(connection, name=metaName,
                          paramsA=["english_name", "kanji_name", "romaji_name", 
                                   "year", "aid"])
       try:
-        Log("Trying to lookup %s by name on anidb" % media.name)
+        Log("Trying to lookup %s by name on anidb" % metaName)
         fileInfo.load_data()
       except Exception, e :
         Log("Could not load anime data, msg: " + str(e))
