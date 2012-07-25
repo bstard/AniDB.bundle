@@ -16,7 +16,8 @@
 from __future__ import with_statement
 import hashlib
 import os
-import xml.etree.cElementTree as etree
+from lxml import etree
+from lxml.etree import ElementTree as etree
 import urllib
 
 

@@ -15,7 +15,8 @@
 
 from time import time, sleep
 import aniDBfileInfo as fileInfo
-import xml.etree.cElementTree as etree
+from lxml import etree
+from lxml.etree import ElementTree as etree
 import os, re, string
 from aniDBmaper import AniDBMaper
 from aniDBtvDBmaper import TvDBMap
