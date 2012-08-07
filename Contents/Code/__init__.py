@@ -152,15 +152,9 @@ class MotherAgent:
       raise e
     
 
-  def doSearch(self, results, media, lang):
-    
-    connection = self.connect()
-
-    if not connection:
-      return
-
-    filePath = urllib.unquote(media.filename)
-
+  def doHashSearch(self, results, filename, connection):
+    filePath = urllib.unquote(filename)
+  
     fileInfo = adba.File(connection, filePath=filePath,
          paramsF=["aid"],
          paramsA=["english_name", "romaji_name", "kanji_name", "year"])
@@ -170,21 +164,40 @@ class MotherAgent:
       fileInfo.load_data()
     except Exception, e :
       Log("Could not load file data, msg: " + str(e))
+      
+    return fileInfo
     
-    if not fileInfo.dataDict.has_key('aid') and (media.name is not None or media.show is not None):
+  def doNameSearch(self, results, name, connection):
+    fileInfo = adba.Anime(connection, name=name,
+                       paramsA=["english_name", "kanji_name", "romaji_name", 
+                                "year", "aid"])
+    try:
+      Log("Trying to lookup %s by name on anidb" % name)
+      fileInfo.load_data()
+    except Exception, e :
+      Log("Could not load anime data, msg: " + str(e))
+      raise e
+    
+    return fileInfo
+    
+  def doSearch(self, results, media, lang):
+    
+    connection = self.connect()
+
+    if connection is None:
+      return
+
+    fileInfo = None
+    
+    if media.filename is not None:
+      fileInfo = self.doHashSearch(results, media.filename, connection)
+    
+    if fileInfo is None or (not fileInfo.dataDict.has_key('aid') and (media.name is not None or media.show is not None)):
       metaName = media.name
       if metaName is None:
         metaName = media.show
-      fileInfo = adba.Anime(connection, name=metaName,
-                         paramsA=["english_name", "kanji_name", "romaji_name", 
-                                  "year", "aid"])
-      try:
-        Log("Trying to lookup %s by name on anidb" % metaName)
-        fileInfo.load_data()
-      except Exception, e :
-        Log("Could not load anime data, msg: " + str(e))
-        raise e
-      
+      fileInfo = self.doNameSearch(results, metaName, connection)
+
     if not fileInfo.dataDict.has_key('aid'):
       Log("No match found or error occurred!")
       return
