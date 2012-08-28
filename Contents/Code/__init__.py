@@ -12,31 +12,46 @@ IDLE_TIMEOUT = timedelta(seconds = 60 * 5)
 
 LOCK = threading.RLock()
 
+CONNECTION = None
+LAST_ACCESS = None
+
 def Start():
   HTTP.CacheTime = 0
+  Thread.CreateTimer(300, checkConnection)
+
+
+def checkConnection():
+  global LAST_ACCESS
+  global CONNECTION
+  
+  Log("Checking for idle connection timeout...")
+  
+  LOCK.acquire()
+  try:
+    if CONNECTION is not None and LAST_ACCESS is not None and (datetime.now()-IDLE_TIMEOUT) > LAST_ACCESS:
+      CONNECTION.stop()
+      CONNECTION = None
+      Log("Connection timeout reached. Closing connection!")
+  except:
+      pass
+  finally:
+    LOCK.release()
+    
+  Thread.CreateTimer(300, checkConnection)
+
 
 class MotherAgent:
 
-  lastAccess = None
-  connection = None
-
   def connect(self):
+
+    global CONNECTION
+    global LAST_ACCESS
+        
+    if CONNECTION is not None:
+      Log("Reusing authenticated connection")
+      return CONNECTION
     
-    now = datetime.now()
-    
-    if self.connection:
-      if self.lastAccess and (now-IDLE_TIMEOUT) <= self.lastAccess:
-        Log("Reusing authenticated connection")
-        self.lastAccess = datetime.now()
-        return self.connection 
-    
-      try:
-          self.connection.stop()
-          self.connection = None
-      except:
-          pass
-    
-    self.connection = adba.Connection(log=True)
+    CONNECTION = adba.Connection(log=True)
 
     try:
         username = Prefs["username"]
@@ -46,16 +61,16 @@ class MotherAgent:
             Log("Set username and password!")
             return None
         
-        self.connection.auth(username, password)
+        CONNECTION.auth(username, password)
         Log("Auth ok!")
         
     except Exception, e :
         Log("Auth exception msg: " + str(e))
         raise e
 
-    self.lastAccess = datetime.now()
+    LAST_ACCESS = datetime.now()
     
-    return self.connection
+    return CONNECTION
     
   def decodeString(self, string = None):
     if string == None:
@@ -196,6 +211,13 @@ class MotherAgent:
       metaName = media.name
       if metaName is None:
         metaName = media.show
+        
+      if metaName is not None and metaName.startswith('aid:'):
+        aid = metaName[4:].strip()
+        Log("Will search for metadata for anime id " + aid)
+        results.Append(MetadataSearchResult(id=str(aid), name=metaName, year=None, score=100, lang=Locale.Language.English))
+        return
+        
       fileInfo = self.doNameSearch(results, metaName, connection)
 
     if not fileInfo.dataDict.has_key('aid'):
