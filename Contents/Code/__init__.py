@@ -47,29 +47,32 @@ class MotherAgent:
     global CONNECTION
     global LAST_ACCESS
         
-    if CONNECTION is not None:
-      Log("Reusing authenticated connection")
-      return CONNECTION
-    
-    CONNECTION = adba.Connection(log=True)
-
     try:
-        username = Prefs["username"]
-        password = Prefs["password"]
-        
-        if not username or not password:
-            Log("Set username and password!")
-            return None
-        
-        CONNECTION.auth(username, password)
-        Log("Auth ok!")
+      username = Prefs["username"]
+      password = Prefs["password"]
+      
+      if CONNECTION is not None:
+        if not CONNECTION.authed():
+          CONNECTION.auth(username, password)
+          
+        Log("Reusing authenticated connection")
+        LAST_ACCESS = datetime.now()
+        return CONNECTION
+      
+      CONNECTION = adba.Connection(log=True)
+      
+      if not username or not password:
+          Log("Set username and password!")
+          return None
+      
+      CONNECTION.auth(username, password)
+      Log("Auth ok!")
         
     except Exception, e :
-        Log("Auth exception msg: " + str(e))
-        raise e
+      Log("Connection exception, msg: " + str(e))
+      raise e
 
     LAST_ACCESS = datetime.now()
-    
     return CONNECTION
     
   def decodeString(self, string = None):
