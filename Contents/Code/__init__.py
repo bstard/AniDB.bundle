@@ -17,7 +17,6 @@ LAST_ACCESS = None
 
 def Start():
   HTTP.CacheTime = 0
-  Thread.CreateTimer(300, checkConnection)
 
 
 def checkConnection():
@@ -61,6 +60,8 @@ class MotherAgent:
         return CONNECTION
       
       CONNECTION = adba.Connection(log=True)
+      
+      Thread.CreateTimer(300, checkConnection)
       
       if not username or not password:
           Log("Set username and password!")
