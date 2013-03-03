@@ -33,11 +33,12 @@ def checkConnection():
       CONNECTION = None
       Log("Connection timeout reached. Closing connection!")
   except:
-      pass
+    pass
   finally:
     LOCK.release()
-    
-  Thread.CreateTimer(300, checkConnection)
+   
+  if CONNECTION is not None:  
+    Thread.CreateTimer(300, checkConnection)
 
 
 class MotherAgent:
