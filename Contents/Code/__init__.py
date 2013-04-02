@@ -305,11 +305,15 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
         metadata.seasons[s].posters[picUrl] = Proxy.Media(HTTP.Request(picUrl).content)
       
       for ep in media.seasons[s].episodes:
-        
-        Log("Loading metadata for '" + metadata.title + "', episode " + ep)
-        
-        episode = adba.Episode(connection, aid=metadata.id, epno=ep)
-  
+
+        epno = ep
+        if str(s) == "0":
+            epno = "S" + str(ep)
+
+        Log("Loading metadata for '" + metadata.title + "', season " + s + " episode " + epno)
+
+        episode = adba.Episode(connection, aid=metadata.id, epno=epno)
+
         try:   
           episode.load_data()
         except IndexError, e:
