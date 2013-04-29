@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 ANIDB_PIC_URL_BASE = "http://img7.anidb.net/pics/anime/"
 
-IDLE_TIMEOUT = timedelta(seconds = 60 * 5)
+IDLE_TIMEOUT = timedelta(seconds=60 * 5)
 
 LOCK = threading.RLock()
 
@@ -27,7 +27,7 @@ def checkConnection():
   
   LOCK.acquire()
   try:
-    if CONNECTION is not None and LAST_ACCESS is not None and (datetime.now()-IDLE_TIMEOUT) > LAST_ACCESS:
+    if CONNECTION is not None and LAST_ACCESS is not None and (datetime.now() - IDLE_TIMEOUT) > LAST_ACCESS:
       CONNECTION.stop()
       CONNECTION = None
       Log("Connection timeout reached. Closing connection!")
@@ -77,20 +77,20 @@ class MotherAgent:
     LAST_ACCESS = datetime.now()
     return CONNECTION
     
-  def decodeString(self, string = None):
+  def decodeString(self, string=None):
     if string == None:
       return string
     
     bracketStart = string.find('[')
     bracketEnd = string.find(']') 
     if bracketStart > -1 and bracketEnd > bracketStart:
-      string = string[:bracketStart] + string[bracketEnd+1:]
+      string = string[:bracketStart] + string[bracketEnd + 1:]
       string = self.decodeString(string)
       
     lt = string.find('<')
     gt = string.find('>') 
     if lt > -1 and gt > lt:
-      string = string[:lt] + string[gt+1:]
+      string = string[:lt] + string[gt + 1:]
       string = self.decodeString(string)
     
     return string
@@ -110,8 +110,8 @@ class MotherAgent:
     currentPart = int(animeDesc.dataDict['current_part'])
     maxParts = int(animeDesc.dataDict['max_parts'])
     
-    if (maxParts-currentPart) > 1:
-      desc = desc + self.getDescription(connection, aid, part+1)
+    if (maxParts - currentPart) > 1:
+      desc = desc + self.getDescription(connection, aid, part + 1)
     
     return desc
 
@@ -119,6 +119,13 @@ class MotherAgent:
     for name in names:
       if dictionary.has_key(name) and len(dictionary[name]) > 0:
         return dictionary[name]
+      
+    return None
+
+  def getDictValueWithFallbacks(self, episodeKey, *names):
+    for name in names:
+      if name in Dict and len(Dict[name]) > 0:
+        return Dict[name]
       
     return None
   
@@ -130,8 +137,8 @@ class MotherAgent:
     Log("Loading metadata for anime aid " + aid)
     
     anime = adba.Anime(connection, aid=metadata.id,
-                       paramsA=["epno", "english_name", "kanji_name", "romaji_name", 
-                                "year", "picname", "url", "rating", "episodes", 
+                       paramsA=["epno", "english_name", "kanji_name", "romaji_name",
+                                "year", "picname", "url", "rating", "episodes",
                                 "highest_episode_number", "air_date"])
     try:   
       anime.load_data()
@@ -189,7 +196,7 @@ class MotherAgent:
     
   def doNameSearch(self, results, name, connection):
     fileInfo = adba.Anime(connection, name=name,
-                       paramsA=["english_name", "kanji_name", "romaji_name", 
+                       paramsA=["english_name", "kanji_name", "romaji_name",
                                 "year", "aid"])
     try:
       Log("Trying to lookup %s by name on anidb" % name)
@@ -267,7 +274,7 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
     connection = self.connect()
     if not connection:
       return
-    self.getAnimeInfo(connection, metadata.id, metadata, movie=True, force)
+    self.getAnimeInfo(connection, metadata.id, metadata, movie=True, force=True)
   
   
 class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
@@ -291,7 +298,7 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
     finally:
       LOCK.release()
 
-  def doUpdate(self, metadata, media, lang, force = False):
+  def doUpdate(self, metadata, media, lang, force=False):
 
     connection = self.connect()
     if not connection:
@@ -306,43 +313,33 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
       
       for ep in media.seasons[s].episodes:
 
-        epno = ep
-        if str(s) == "0":
-            epno = "S" + str(ep)
+        episodeKey = self.getEpisodeKey(metadata.id, s, ep)
 
-        Log("Loading metadata for '" + metadata.title + "', season " + s + " episode " + epno)
+        if force == True or not episodeKey in Dict:
+          self.loadEpisode(connection, metadata, s, ep, episodeKey)
 
-        episode = adba.Episode(connection, aid=metadata.id, epno=epno)
-
-        try:   
-          episode.load_data()
-        except IndexError, e:
-          Log("Episode number is incorrect, msg: " + str(e) + " for episode " + ep)
-        except Exception, e :
-          Log("Could not load episode info, msg: " + str(e))
-          raise e
-          
-        metadata.seasons[s].episodes[ep].title = self.getValueWithFallbacks(episode.dataDict, 
+        metadata.seasons[s].episodes[ep].title = self.getDictValueWithFallbacks(episodeKey
                                                                            'name', 'romaji', 'kanji')
-        if episode.dataDict.has_key('rating'):
-          metadata.seasons[s].episodes[ep].rating = float(episode.dataDict['rating']) / 100
+        
+        if (episodeKey + "rating") in Dict:
+          metadata.seasons[s].episodes[ep].rating = float(Dict[episodeKey + "rating"]) / 100
       
-        if episode.dataDict.has_key('length'):
-          metadata.seasons[s].episodes[ep].duration = int(episode.dataDict['length']) * 60 * 1000
+        if (episodeKey + "length") in Dict:
+          metadata.seasons[s].episodes[ep].duration = int(Dict[episodeKey + "length"] * 60 * 1000)
           
-        if episode.dataDict.has_key('aired'):
+        if (episodeKey + "aired") in Dict:
           try:
-            metadata.seasons[s].episodes[ep].originally_available_at = self.getDate(episode.dataDict['aired'])
+            metadata.seasons[s].episodes[ep].originally_available_at = self.getDate(Dict[episodeKey + "aired"])
           except:
             pass
         
-  def loadEpisode(self, connection, metadata, season, episode):
+  def loadEpisode(self, connection, metadata, season, episode, episodeKey):
       
       epno = episode
-      if str(s) == "0":
+      if str(season) == "0":
         epno = "S" + str(ep)
 
-      Log("Loading metadata for '" + metadata.title + "', season " + season + " episode " + epno)
+      Log("(Re)Loading metadata for '" + metadata.title + "', season " + season + " episode " + epno)
 
       episode = adba.Episode(connection, aid=metadata.id, epno=episode)
 
@@ -353,20 +350,19 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
       except Exception, e :
         Log("Could not load episode info, msg: " + str(e))
         raise e
-
-      episodeKey = str(season) + "-" + str(episode) + "-"
       
-      Dict[episodeKey + "title"] = self.getValueWithFallbacks(episode.dataDict, 
-                                                                           'name', 'romaji', 'kanji')
-      if episode.dataDict.has_key('rating'):
-        Dict[episodeKey + "rating"] = float(episode.dataDict['rating']) / 100
-      
-      if episode.dataDict.has_key('length'):
-        Dict[episodeKey + "length"] = int(episode.dataDict['length']) * 60 * 1000
-          
-      if episode.dataDict.has_key('aired'):
-        try:
-          Dict[episodeKey + "aired"] = self.getDate(episode.dataDict['aired'])
-        except:
-          pass
+      self.setValue(episode.dataDict, "name", episodeKey)
+      self.setValue(episode.dataDict, "romaji", episodeKey)
+      self.setValue(episode.dataDict, "kanji", episodeKey)
+      self.setValue(episode.dataDict, "rating", episodeKey)
+      self.setValue(episode.dataDict, "length", episodeKey)
+      self.setValue(episode.dataDict, "aired", episodeKey)
+      Dict[episodeKey] = True
 
+  def setValue(self, dictionary, key, episodeKey):
+      if dictionary.has_key(key):
+          Dict[episodeKey + key] = dictionary[key]
+    
+  def getEpisodeKey(self, aid, season, episode):
+      return aid + "-" + str(season) + "-" + str(episode) + "-"
+ 
