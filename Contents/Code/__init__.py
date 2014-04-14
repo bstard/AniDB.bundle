@@ -18,7 +18,7 @@ LAST_ACCESS = None
 LANGUAGE_MAP = dict()
 
 def Start():
-  HTTP.CacheTime = 0
+  HTTP.CacheTime = 3600
   LANGUAGE_MAP["English"] = "english_name"
   LANGUAGE_MAP["Romaji"] = "romaji_name"
   LANGUAGE_MAP["Kanji"] = "kanji_name"
@@ -274,6 +274,7 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
     connection = self.connect()
     if not connection:
       return
+
     self.getAnimeInfo(connection, metadata.id, metadata, True, force)
   
   
@@ -312,44 +313,37 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
         metadata.seasons[s].posters[picUrl] = Proxy.Media(HTTP.Request(picUrl).content)
       
       for ep in media.seasons[s].episodes:
+  
+        episodeKey = self.loadEpisode(connection, metadata, s, ep, force)
 
-        epno = ep
-        if str(s) == "0":
-            epno = "S" + str(ep)
-
-        Log("Loading metadata for '" + metadata.title + "', season " + s + " episode " + epno)
-
-        episode = adba.Episode(connection, aid=metadata.id, epno=epno)
-
-        try:   
-          episode.load_data()
-        except IndexError, e:
-          Log("Episode number is incorrect, msg: " + str(e) + " for episode " + ep)
-        except Exception, e :
-          Log("Could not load episode info, msg: " + str(e))
-          raise e
-          
-        metadata.seasons[s].episodes[ep].title = self.getValueWithFallbacks(episode.dataDict, titleKey(), 
-                                                                           'english_name', 'romaji_name', 'kanji_name')
-        if episode.dataDict.has_key('rating'):
-          metadata.seasons[s].episodes[ep].rating = float(episode.dataDict['rating']) / 100
-      
-        if episode.dataDict.has_key('length'):
-          metadata.seasons[s].episodes[ep].duration = int(episode.dataDict['length']) * 60 * 1000
-          
-        if episode.dataDict.has_key('aired'):
-          try:
-            metadata.seasons[s].episodes[ep].originally_available_at = self.getDate(episode.dataDict['aired'])
-          except:
-            pass
+        metadata.seasons[s].episodes[ep].title = Dict[episodeKey + "title"]
         
-  def loadEpisode(self, connection, metadata, season, episode):
+        if str(episodeKey + "rating") in Dict:
+          metadata.seasons[s].episodes[ep].rating = Dict[episodeKey + "rating"]
+      
+        if str(episodeKey + "length") in Dict:
+          metadata.seasons[s].episodes[ep].duration = Dict[episodeKey + "length"]
+          
+        if str(episodeKey + "aired") in Dict:
+          metadata.seasons[s].episodes[ep].originally_available_at = Dict[episodeKey + "aired"]
+        
+  def loadEpisode(self, connection, metadata, season, episode, force):
       
       epno = episode
-      if str(s) == "0":
+      if str(season) == "0":
         epno = "S" + str(ep)
 
-      Log("Loading metadata for '" + metadata.title + "', season " + season + " episode " + epno)
+      episodeKey = str(season) + "-" + str(episode) + "-"
+
+
+      Log("Force: " + str(force))
+      Log("Has key: " + str(str(episodeKey + "title") in Dict))
+
+      if str(episodeKey + "title") in Dict and not force:
+        Log("Metadata for '" + metadata.title + "', season " + season + " episode " + epno + " found in cache")
+        return episodeKey
+      
+      Log("Loading metadata for '" + metadata.title + "', season " + season + " episode " + epno + " from AniDB")
 
       episode = adba.Episode(connection, aid=metadata.id, epno=episode)
 
@@ -360,8 +354,6 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
       except Exception, e :
         Log("Could not load episode info, msg: " + str(e))
         raise e
-
-      episodeKey = str(season) + "-" + str(episode) + "-"
       
       Dict[episodeKey + "title"] = self.getValueWithFallbacks(episode.dataDict, titleKey(), 
                                                                            'english_name', 'romaji_name', 'kanji_name')
@@ -376,4 +368,6 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
           Dict[episodeKey + "aired"] = self.getDate(episode.dataDict['aired'])
         except:
           pass
+      
+      return episodeKey
 
