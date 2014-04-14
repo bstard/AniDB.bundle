@@ -493,7 +493,7 @@ class EpisodeResponse(Response):
 		Response.__init__(self,cmd,restag,rescode,resstr,datalines)
 		self.codestr='EPISODE'
 		self.codehead=()
-		self.codetail=('eid', 'aid', 'length', 'rating', 'votes', 'epno', 'name', 'romaji', 'kanji', 'aired')
+		self.codetail=('eid', 'aid', 'length', 'rating', 'votes', 'epno', 'english_name', 'romaji_name', 'kanji_name', 'aired')
 		self.coderep=()
 
 class ProducerResponse(Response):

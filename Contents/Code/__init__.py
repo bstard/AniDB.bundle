@@ -15,9 +15,17 @@ LOCK = threading.RLock()
 CONNECTION = None
 LAST_ACCESS = None
 
+LANGUAGE_MAP = dict()
+
 def Start():
   HTTP.CacheTime = 0
+  LANGUAGE_MAP["English"] = "english_name"
+  LANGUAGE_MAP["Romaji"] = "romaji_name"
+  LANGUAGE_MAP["Kanji"] = "kanji_name"
 
+def titleKey():
+  titlePref = Prefs["title_lang"]
+  return LANGUAGE_MAP[titlePref]
 
 def checkConnection():
   global LAST_ACCESS
@@ -152,9 +160,8 @@ class MotherAgent:
       if anime.dataDict.has_key('rating'):
         metadata.rating = float(anime.dataDict['rating']) / 100
       
-      metadata.title = self.getValueWithFallbacks(anime.dataDict, 'english_name', 'romaji_name', 'kanji_name')
-      if movie:
-          metadata.original_title = self.getValueWithFallbacks(anime.dataDict, 'romaji_name', 'kanji_name')
+      metadata.title = self.getValueWithFallbacks(anime.dataDict, titleKey(), 'english_name', 'romaji_name', 'kanji_name')
+      
       metadata.originally_available_at = self.getDate(anime.dataDict['air_date'])
         
       if anime.dataDict.has_key('picname'):
@@ -231,7 +238,7 @@ class MotherAgent:
     
     aid = fileInfo.dataDict['aid']
         
-    name = self.getValueWithFallbacks(fileInfo.dataDict, 'english_name', 'romaji_name', 'kanji_name')
+    name = self.getValueWithFallbacks(fileInfo.dataDict, titleKey(), 'english_name', 'romaji_name', 'kanji_name')
     
     year = str(fileInfo.dataDict['year'])
     if year.find('-') > -1:
@@ -267,7 +274,7 @@ class AniDBAgentMovies(Agent.Movies, MotherAgent):
     connection = self.connect()
     if not connection:
       return
-    self.getAnimeInfo(connection, metadata.id, metadata, movie=True, force)
+    self.getAnimeInfo(connection, metadata.id, metadata, True, force)
   
   
 class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
@@ -297,7 +304,7 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
     if not connection:
       return
 
-    self.getAnimeInfo(connection, metadata.id, metadata, movie=False, force=force)
+    self.getAnimeInfo(connection, metadata.id, metadata, False, force)
 
     for s in media.seasons:
       
@@ -322,8 +329,8 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
           Log("Could not load episode info, msg: " + str(e))
           raise e
           
-        metadata.seasons[s].episodes[ep].title = self.getValueWithFallbacks(episode.dataDict, 
-                                                                           'name', 'romaji', 'kanji')
+        metadata.seasons[s].episodes[ep].title = self.getValueWithFallbacks(episode.dataDict, titleKey(), 
+                                                                           'english_name', 'romaji_name', 'kanji_name')
         if episode.dataDict.has_key('rating'):
           metadata.seasons[s].episodes[ep].rating = float(episode.dataDict['rating']) / 100
       
@@ -356,8 +363,8 @@ class AniDBAgentTV(Agent.TV_Shows, MotherAgent):
 
       episodeKey = str(season) + "-" + str(episode) + "-"
       
-      Dict[episodeKey + "title"] = self.getValueWithFallbacks(episode.dataDict, 
-                                                                           'name', 'romaji', 'kanji')
+      Dict[episodeKey + "title"] = self.getValueWithFallbacks(episode.dataDict, titleKey(), 
+                                                                           'english_name', 'romaji_name', 'kanji_name')
       if episode.dataDict.has_key('rating'):
         Dict[episodeKey + "rating"] = float(episode.dataDict['rating']) / 100
       
